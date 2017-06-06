@@ -87,6 +87,7 @@ define([
                 Common.UI.ComboBox.prototype.initialize.call(this, _.extend(options, {
                     displayField: 'name',
                     scroller: {
+                        wheelSpeed: 20,
                         alwaysVisibleY: true,
                         onChange: this.updateVisibleFontsTiles.bind(this)
                     }
@@ -382,12 +383,11 @@ define([
                     }
                     $(this.el).find('ul').scrollTop(0);
                     this.trigger('show:after', this, e);
+                    this.flushVisibleFontsTiles();
+                    this.updateVisibleFontsTiles(null, 0);
                 } else {
                     Common.UI.ComboBox.prototype.onAfterShowMenu.apply(this, arguments);
                 }
-
-                this.flushVisibleFontsTiles();
-                this.updateVisibleFontsTiles(null, 0);
             },
 
             onAfterHideMenu: function(e) {
@@ -398,6 +398,8 @@ define([
             },
 
             addItemToRecent: function(record) {
+                if (this.recent<1) return;
+
                 if (record.get('type') != FONT_TYPE_RECENT &&
                     !this.store.findWhere({name: record.get('name'),type:FONT_TYPE_RECENT})) {
                     var fonts = this.store.where({type:FONT_TYPE_RECENT});

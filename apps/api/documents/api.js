@@ -115,7 +115,8 @@
                     statusBar: true,
                     autosave: true,
                     forcesave: false,
-                    commentAuthorOnly: false
+                    commentAuthorOnly: false,
+                    showReviewChanges: false
                 },
                 plugins: {
                     autoStartGuid: 'asc.{FFE1F462-1EA2-4391-990D-4CC84940B754}',
@@ -327,7 +328,8 @@
                 if (type && typeof type[1] === 'string') {
                     if (!_config.document.permissions)
                         _config.document.permissions = {};
-                    _config.document.permissions.edit = false;
+                    _config.document.permissions.edit = _config.document.permissions.review = false;
+                    _config.editorConfig.canUseHistory = false;
                 }
 
                 if (!_config.document.title || _config.document.title=='')
@@ -409,21 +411,12 @@
             });
         };
 
-        var _showError = function(title, msg) {
-            _showMessage(title, msg, "error");
-        };
-
-        // severity could be one of: "error", "info" or "warning"
-        var _showMessage = function(title, msg, severity) {
-            if (typeof severity !== 'string') {
-                severity = "info";
-            }
+        var _showMessage = function(title, msg) {
+            msg = msg || title;
             _sendCommand({
                 command: 'showMessage',
                 data: {
-                    title: title,
-                    msg: msg,
-                    severity: severity
+                    msg: msg
                 }
             });
         };
@@ -540,7 +533,6 @@
         };
 
         return {
-            showError           : _showError,
             showMessage         : _showMessage,
             processSaveResult   : _processSaveResult,
             processRightsChange : _processRightsChange,

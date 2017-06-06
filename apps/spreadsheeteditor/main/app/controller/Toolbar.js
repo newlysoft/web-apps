@@ -810,7 +810,20 @@ define([
                     props = me.api.asc_getChartObject();
                     if (props) {
                         props.putType(record.get('type'));
-                        (ischartedit) ? me.api.asc_editChartDrawingObject(props) : me.api.asc_addChartDrawingObject(props);
+                        var range = props.getRange(),
+                            isvalid = me.api.asc_checkDataRange(Asc.c_oAscSelectionDialogType.Chart, range, true, !props.getInColumns(), props.getType());
+                        if (isvalid == Asc.c_oAscError.ID.No) {
+                            (ischartedit) ? me.api.asc_editChartDrawingObject(props) : me.api.asc_addChartDrawingObject(props);
+                        } else {
+                            Common.UI.warning({
+                                msg: (isvalid == Asc.c_oAscError.ID.StockChartError) ? me.errorStockChart : ((isvalid == Asc.c_oAscError.ID.MaxDataSeriesError) ? me.errorMaxRows : me.txtInvalidRange),
+                                callback: function() {
+                                    _.defer(function(btn) {
+                                        Common.NotificationCenter.trigger('edit:complete', me.toolbar);
+                                    })
+                                }
+                            });
+                        }
                     }
                 }
             }
@@ -938,8 +951,8 @@ define([
 
         onCustomNumberFormat: function() {
             var me = this,
-                value = Common.localStorage.getItem("sse-settings-reg-settings");
-            value = (value!==null) ? parseInt(value) : ((me.toolbar.mode.lang) ? parseInt(Common.util.LanguageInfo.getLocalLanguageCode(me.toolbar.mode.lang)) : 0x0409);
+                value = me.api.asc_getLocale();
+            (!value) && (value = ((me.toolbar.mode.lang) ? parseInt(Common.util.LanguageInfo.getLocalLanguageCode(me.toolbar.mode.lang)) : 0x0409));
 
             (new SSE.Views.FormatSettingsDialog({
                 api: me.api,
@@ -957,10 +970,9 @@ define([
 
         onNumberFormatOpenBefore: function(combo) {
             if (this.api) {
-                var me = this;
-
-                var value = Common.localStorage.getItem("sse-settings-reg-settings");
-                value = (value!==null) ? parseInt(value) : ((this.toolbar.mode.lang) ? parseInt(Common.util.LanguageInfo.getLocalLanguageCode(this.toolbar.mode.lang)) : 0x0409);
+                var me = this,
+                    value = me.api.asc_getLocale();
+                (!value) && (value = ((me.toolbar.mode.lang) ? parseInt(Common.util.LanguageInfo.getLocalLanguageCode(me.toolbar.mode.lang)) : 0x0409));
 
                 if (this._state.langId !== value) {
                     this._state.langId = value;
@@ -1741,6 +1753,7 @@ define([
 
             toolbar.lockToolbar(SSE.enumLock.cantHyperlink, (selectionType == Asc.c_oAscSelectionType.RangeShapeText) && (this.api.asc_canAddShapeHyperlink()===false), { array: [toolbar.btnInsertHyperlink]});
 
+            /*
             need_disable = selectionType != Asc.c_oAscSelectionType.RangeCells && selectionType != Asc.c_oAscSelectionType.RangeCol &&
                            selectionType != Asc.c_oAscSelectionType.RangeRow && selectionType != Asc.c_oAscSelectionType.RangeMax;
             if (this._state.sparklines_disabled !== need_disable) {
@@ -1750,6 +1763,7 @@ define([
                     this._state.sparklines_disabled = need_disable;
                 }
             }
+            */
 
             if (editOptionsDisabled) return;
 
@@ -3058,7 +3072,10 @@ define([
         txtSorting: 'Sorting',
         txtSortSelected: 'Sort selected',
         textLongOperation: 'Long operation',
-        warnLongOperation: 'The operation you are about to perform might take rather much time to complete.<br>Are you sure you want to continue?'
+        warnLongOperation: 'The operation you are about to perform might take rather much time to complete.<br>Are you sure you want to continue?',
+        txtInvalidRange: 'ERROR! Invalid cells range',
+        errorMaxRows: 'ERROR! The maximum number of data series per chart is 255.',
+        errorStockChart: 'Incorrect row order. To build a stock chart place the data on the sheet in the following order:<br> opening price, max price, min price, closing price.'
 
     }, SSE.Controllers.Toolbar || {}));
 });
